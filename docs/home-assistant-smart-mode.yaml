@@ -1,0 +1,70 @@
+# Home Assistant companion snippet for the ESPHome pool heat pump water heater.
+#
+# Replace every occurrence of `water_heater.pool_heat_pump` with the actual
+# entity_id exposed by your ESPHome device if it differs.
+
+template:
+  - select:
+      - name: "Pool Heat Pump Mode"
+        unique_id: pool_heat_pump_mode_wrapper
+        icon: mdi:heat-pump
+        availability: "{{ has_value('water_heater.pool_heat_pump') }}"
+        options: "{{ ['Off', 'Smart', 'Eco', 'Boost'] }}"
+        state: >-
+          {% set mode = states('water_heater.pool_heat_pump') %}
+          {% if mode == 'heat_pump' %}
+            Smart
+          {% elif mode == 'eco' %}
+            Eco
+          {% elif mode == 'performance' %}
+            Boost
+          {% else %}
+            Off
+          {% endif %}
+        select_option:
+          - choose:
+              - conditions: "{{ option == 'Off' }}"
+                sequence:
+                  - action: water_heater.turn_off
+                    target:
+                      entity_id: water_heater.pool_heat_pump
+              - conditions: "{{ option == 'Smart' }}"
+                sequence:
+                  - action: water_heater.set_operation_mode
+                    target:
+                      entity_id: water_heater.pool_heat_pump
+                    data:
+                      operation_mode: heat_pump
+              - conditions: "{{ option == 'Eco' }}"
+                sequence:
+                  - action: water_heater.set_operation_mode
+                    target:
+                      entity_id: water_heater.pool_heat_pump
+                    data:
+                      operation_mode: eco
+              - conditions: "{{ option == 'Boost' }}"
+                sequence:
+                  - action: water_heater.set_operation_mode
+                    target:
+                      entity_id: water_heater.pool_heat_pump
+                    data:
+                      operation_mode: performance
+
+  - sensor:
+      - name: "Pool Heat Pump Friendly Mode"
+        unique_id: pool_heat_pump_friendly_mode
+        icon: mdi:format-list-bulleted-type
+        availability: "{{ has_value('water_heater.pool_heat_pump') }}"
+        state: >-
+          {% set mode = states('water_heater.pool_heat_pump') %}
+          {% if mode == 'heat_pump' %}
+            Smart
+          {% elif mode == 'eco' %}
+            Eco
+          {% elif mode == 'performance' %}
+            Boost
+          {% elif mode == 'off' %}
+            Off
+          {% else %}
+            {{ mode }}
+          {% endif %}

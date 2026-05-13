@@ -781,9 +781,7 @@ water_heater:
           auto desired_mode = id(hp_pool_water_heater).get_mode();
           float desired_setpoint = id(hp_pool_water_heater).get_target_temperature();
 
-          if (desired_mode != water_heater::WATER_HEATER_MODE_OFF) {
-            id(hp_last_water_heater_mode) = desired_mode;
-          }
+          id(hp_last_water_heater_mode) = desired_mode;
 
           if (std::isnan(desired_setpoint)) {
             desired_setpoint = id(hp_water_temp_setpoint).state;
@@ -810,18 +808,13 @@ water_heater:
             setpoint_call.perform();
           }
 
+          std::string desired_option;
           if (desired_mode == water_heater::WATER_HEATER_MODE_OFF) {
-            if (id(hp_power_switch).state) {
-              id(hp_power_switch).turn_off();
-            }
-            return;
-          }
-
-          if (!id(hp_power_switch).state) {
+            desired_option = "Standby";
+          } else if (!id(hp_power_switch).state) {
             id(hp_power_switch).turn_on();
           }
 
-          std::string desired_option;
           if (desired_mode == water_heater::WATER_HEATER_MODE_HEAT_PUMP) {
             if (cooling_family) {
               desired_option = "Cooling + Smart";

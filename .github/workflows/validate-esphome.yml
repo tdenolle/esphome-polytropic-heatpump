@@ -1,0 +1,74 @@
+name: Validate ESPHome
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ESPHome
+        run: pip install esphome==2026.4.5
+
+      - name: Create temporary secrets
+        run: |
+          cat > .ci-secrets.yaml <<'EOF'
+          wifi_ssid: ci-validation-network
+          wifi_password: ci-validation-password
+          esp32c3_heatpump_pool_wifi_ap_password: ci-ap-password
+          esp32c3_heatpump_pool_api_key: 1234567890123456789012345678901234567890123=
+          esp32c3_heatpump_pool_ota_password: ci-ota-password
+          EOF
+
+      - name: Validate configurations
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t configs < <(
+            git ls-files '*.yaml' '*.yml' | while read -r file; do
+              case "$file" in
+                .github/*|docs/*|secrets.yaml|secrets.local.yaml|.ci-secrets.yaml)
+                  continue
+                  ;;
+              esac
+
+              if grep -q '^esphome:' "$file"; then
+                printf '%s\n' "$file"
+              fi
+            done
+          )
+
+          if [ "${#configs[@]}" -eq 0 ]; then
+            echo 'No ESPHome configuration files found.' >&2
+            exit 1
+          fi
+
+          cleanup() {
+            for config in "${configs[@]}"; do
+              config_dir=$(dirname "$config")
+              rm -f "$config_dir/secrets.yaml"
+            done
+            rm -f .ci-secrets.yaml
+          }
+          trap cleanup EXIT
+
+          for config in "${configs[@]}"; do
+            config_dir=$(dirname "$config")
+            cp .ci-secrets.yaml "$config_dir/secrets.yaml"
+            echo "Validating $config"
+            esphome config "$config"
+          done
