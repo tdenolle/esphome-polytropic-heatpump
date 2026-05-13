@@ -1,0 +1,843 @@
+substitutions:
+  name: esp32c3-heatpump-pool-403da4
+  friendly_name: esp32c3-heatpump-pool-403da4
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: false
+  platformio_options:
+    board_build.flash_mode: dio
+    board_build.mcu: esp32c3
+    board_build.variant: esp32c3
+
+esp32:
+  variant: esp32c3
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+    version: recommended
+    sdkconfig_options:
+      CONFIG_BT_BLE_50_FEATURES_SUPPORTED: y
+      CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "10"
+
+uart:
+  rx_pin: GPIO20
+  tx_pin: GPIO21
+  baud_rate: 9600
+  parity: NONE
+  stop_bits: 1
+  data_bits: 8
+  #debug:
+  #  direction: BOTH
+  #  dummy_receiver: false
+  #  after:
+  #    delimiter: "\n"
+  #  sequence:
+  #    - lambda: UARTDebug::log_hex(direction, bytes, ':');
+
+modbus:
+  id: heatpump_modbus
+  flow_control_pin: GPIO01
+
+modbus_controller:
+  - id: heatpump_modbus_controller
+    address: 0x11  ## (17) address of the ModBUS slave device on the bus
+    modbus_id: heatpump_modbus
+    setup_priority: -10
+    update_interval: 15s
+    command_throttle: 500ms
+    max_cmd_retries: 1
+
+wifi:
+  networks:
+  - ssid: !secret wifi_ssid
+    password: !secret wifi_password
+  ap:
+    ssid: ${friendly_name}
+    password: !secret esp32c3_heatpump_pool_wifi_ap_password
+
+captive_portal:
+
+logger:
+  level: INFO
+
+api:
+  encryption:
+    key: !secret esp32c3_heatpump_pool_api_key
+
+ota:
+  - platform : esphome
+    password: !secret esp32c3_heatpump_pool_ota_password
+
+globals:
+  - id: hp_last_water_heater_mode
+    type: int
+    restore_value: no
+    initial_value: '5'
+
+binary_sensor:
+  - platform: status
+    name: "Status"
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "High Pressure Switch"
+    register_type: holding
+    address: 500
+    bitmask: 0x0001
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Low Pressure Switch"
+    register_type: holding
+    address: 500
+    bitmask: 0x0002
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Water Flow Switch"
+    register_type: holding
+    address: 500
+    bitmask: 0x0008
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Optional Water Pump Active"
+    register_type: holding
+    address: 500
+    bitmask: 0x0020
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Optional Electric Heater Active"
+    register_type: holding
+    address: 500
+    bitmask: 0x0040
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Four Way Valve Active"
+    register_type: holding
+    address: 500
+    bitmask: 0x0080
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Bottom Plate Heater Active"
+    register_type: holding
+    address: 500
+    bitmask: 0x0100
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor Heater Active"
+    register_type: holding
+    address: 500
+    bitmask: 0x0200
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Water In Temp Sensor Failure"
+    register_type: holding
+    address: 501
+    bitmask: 0x0001
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Water Out Temp Sensor Failure"
+    register_type: holding
+    address: 501
+    bitmask: 0x0002
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Coil Temp Sensor Failure"
+    register_type: holding
+    address: 501
+    bitmask: 0x0004
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Ambient Temp Sensor Failure"
+    register_type: holding
+    address: 501
+    bitmask: 0x0008
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Ambient Temp Too Low Protection"
+    register_type: holding
+    address: 501
+    bitmask: 0x0010
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor Out Temp Sensor Failure"
+    register_type: holding
+    address: 501
+    bitmask: 0x0020
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor In Temp Sensor Failure"
+    register_type: holding
+    address: 501
+    bitmask: 0x0040
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Temp Difference Too High"
+    register_type: holding
+    address: 501
+    bitmask: 0x0080
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Temp Difference Too High Repeated"
+    register_type: holding
+    address: 501
+    bitmask: 0x0100
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Cooling Overcool Protection"
+    register_type: holding
+    address: 501
+    bitmask: 0x0200
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "High Pressure Protection"
+    register_type: holding
+    address: 501
+    bitmask: 0x0400
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "High Pressure Protection Repeated"
+    register_type: holding
+    address: 501
+    bitmask: 0x0800
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Low Pressure Protection"
+    register_type: holding
+    address: 501
+    bitmask: 0x1000
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Low Pressure Protection Repeated"
+    register_type: holding
+    address: 501
+    bitmask: 0x2000
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Water Flow Switch Protection"
+    register_type: holding
+    address: 501
+    bitmask: 0x4000
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Anti Freezing Protection"
+    register_type: holding
+    address: 501
+    bitmask: 0x8000
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor Out Temp Too High"
+    register_type: holding
+    address: 502
+    bitmask: 0x0001
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "AC Voltage Input Protection"
+    register_type: holding
+    address: 502
+    bitmask: 0x0002
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "DC Main Line Current Protection"
+    register_type: holding
+    address: 502
+    bitmask: 0x0004
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "AC Current Input Protection"
+    register_type: holding
+    address: 502
+    bitmask: 0x0008
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor Over Current Protection"
+    register_type: holding
+    address: 502
+    bitmask: 0x0010
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "IPM Temp Overheat Protection"
+    register_type: holding
+    address: 502
+    bitmask: 0x0020
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "IPM Protection"
+    register_type: holding
+    address: 502
+    bitmask: 0x0040
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor Driver Protection"
+    register_type: holding
+    address: 502
+    bitmask: 0x0080
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "DC Fan Motor 1 Failure"
+    register_type: holding
+    address: 502
+    bitmask: 0x0100
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "DC Fan Motor 2 Failure"
+    register_type: holding
+    address: 502
+    bitmask: 0x0200
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Driver PCB Communication Failure"
+    register_type: holding
+    address: 502
+    bitmask: 0x0400
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Main PCB Communication Failure"
+    register_type: holding
+    address: 503
+    bitmask: 0x0001
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "EE Data Read Error"
+    register_type: holding
+    address: 503
+    bitmask: 0x0002
+    device_class: problem
+    entity_category: diagnostic
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Defrost Active"
+    register_type: holding
+    address: 503
+    bitmask: 0x8000
+    entity_category: diagnostic
+    icon: mdi:snowflake-melt
+
+text_sensor:
+
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+    dns_address:
+      name: "DNS Address"
+    mac_address:
+      name: "MAC Address"
+    ssid:
+      name: "SSID"
+
+  - platform: template
+    name: "Operation Mode"
+    lambda: |-
+      if (isnan(id(hp_operation_register).state)) {
+        return {"unknown"};
+      }
+      switch (((uint16_t) id(hp_operation_register).state) & 0x000F) {
+        case 0: return {"Standby"};
+        case 1: return {"Auto"};
+        case 2: return {"Cooling + Smart"};
+        case 3: return {"Cooling + Boost"};
+        case 4: return {"Cooling + Eco"};
+        case 5: return {"Heating + Smart"};
+        case 6: return {"Heating + Boost"};
+        case 7: return {"Heating + Eco"};
+        default: return {"Unknown"};
+      }
+    update_interval: 5s
+
+  - platform: template
+    name: "Unit Power State"
+    lambda: |-
+      if (isnan(id(hp_operation_register).state)) {
+        return {"unknown"};
+      }
+      return (((uint16_t) id(hp_operation_register).state) & 0x0010) ? "On" : "Standby";
+    update_interval: 5s
+
+  - platform: template
+    name: "Compressor Failure Label"
+    lambda: |-
+      if (isnan(id(hp_compressor_failure_code).state)) {
+        return {"unknown"};
+      }
+      int code = (int) id(hp_compressor_failure_code).state;
+      if (code <= 0) {
+        return {"none"};
+      }
+      char buffer[8];
+      snprintf(buffer, sizeof(buffer), "EA%02d", code);
+      return {buffer};
+    update_interval: 5s
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    id: hp_operation_register
+    internal: true
+    address: 1000
+    register_type: holding
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    id: hp_compressor_failure_code
+    internal: true
+    address: 523
+    register_type: holding
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor Out Temp"
+    address: 510
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor In Temp"
+    address: 511
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Water In Temp"
+    id: hp_water_in_temp
+    address: 512
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Water Out Temp"
+    address: 513
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Coil Temp"
+    address: 514
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Ambient Temp"
+    address: 515
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "IPM Temp"
+    address: 516
+    register_type: holding
+    value_type: S_WORD
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    state_class: measurement
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "AC Supply Voltage"
+    id: hp_ac_supply_voltage
+    address: 521
+    register_type: holding
+    value_type: U_WORD
+    unit_of_measurement: "V"
+    accuracy_decimals: 0
+    state_class: measurement
+    skip_updates: 3
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "AC Supply Current"
+    id: hp_ac_supply_current
+    address: 522
+    register_type: holding
+    value_type: U_WORD
+    unit_of_measurement: "A"
+    accuracy_decimals: 0
+    state_class: measurement
+    skip_updates: 3
+
+  - platform: template
+    name: "AC Supply Power"
+    lambda: |-
+      if (isnan(id(hp_ac_supply_voltage).state) || isnan(id(hp_ac_supply_current).state)) {
+        return NAN;
+      }
+      return id(hp_ac_supply_voltage).state * id(hp_ac_supply_current).state;
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 0
+    update_interval: 15s
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Compressor Failure Code"
+    address: 523
+    register_type: holding
+    value_type: U_WORD
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    skip_updates: 3
+
+number:
+  #- platform: modbus_controller
+  #  modbus_controller_id: heatpump_modbus_controller
+  #  name: "Water Inlet Compensation"
+  #  address: 57
+  #  register_type: holding
+  #  value_type: S_WORD
+  #  min_value: -9
+  #  max_value: 9
+  #  step: 0.1
+  #  entity_category: config
+  #  lambda: |-
+  #    return x * 0.1f;
+  #  write_lambda: |-
+  #    payload.push_back((uint16_t) ((int16_t) (x * 10.0f)));
+  #    return x;
+
+  #- platform: modbus_controller
+  #  modbus_controller_id: heatpump_modbus_controller
+  #  name: "Max Water Temp Setting"
+  #  register_type: holding
+  #  address: 58
+  #  value_type: U_WORD
+  #  min_value: 25
+  #  max_value: 60
+  #  step: 1
+  #  unit_of_measurement: "°C"
+  #  entity_category: config
+  #  disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Water Temp Setpoint"
+    id: hp_water_temp_setpoint
+    address: 1001
+    value_type: U_WORD
+    register_type: holding
+    min_value: 12
+    max_value: 35
+    step: 0.5
+    unit_of_measurement: "°C"
+    entity_category: config
+    mode: box
+    multiply: 10
+
+select:
+  # Registre 59
+  #- platform: modbus_controller
+  #  modbus_controller_id: heatpump_modbus_controller
+  #  name: "Circulation Pump Mode"
+  #  address: 59
+  #  value_type: U_WORD
+  #  entity_category: config
+  #  optionsmap:
+  #    "Always on when unit on": 0
+  #    "Off with compressor delay": 1
+  #    "Anti-stagnation cycle": 2
+
+  # Registre 1000
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Operation Mode Select"
+    id: hp_operation_mode_select
+    address: 1000
+    value_type: U_WORD
+    entity_category: config
+    optionsmap:
+      "Standby": 0
+      "Auto": 1
+      "Cooling + Smart": 2
+      "Cooling + Boost": 3
+      "Cooling + Eco": 4
+      "Heating + Smart": 5
+      "Heating + Boost": 6
+      "Heating + Eco": 7
+    lambda: |-
+      switch (x & 0x000F) {
+        case 0: return std::string("Standby");
+        case 1: return std::string("Auto");
+        case 2: return std::string("Cooling + Smart");
+        case 3: return std::string("Cooling + Boost");
+        case 4: return std::string("Cooling + Eco");
+        case 5: return std::string("Heating + Smart");
+        case 6: return std::string("Heating + Boost");
+        case 7: return std::string("Heating + Eco");
+        default: return {};
+      }
+    write_lambda: |-
+      if (isnan(id(hp_operation_register).state)) {
+        return {};
+      }
+      uint16_t current = (uint16_t) id(hp_operation_register).state;
+      return (current & 0x0010) | (value & 0x000F);
+
+switch:
+  # Bit 4 du registre 1000
+  - platform: modbus_controller
+    modbus_controller_id: heatpump_modbus_controller
+    name: "Heat Pump Power"
+    id: hp_power_switch
+    register_type: holding
+    address: 1000
+    bitmask: 0x0010
+    entity_category: config
+
+water_heater:
+  - platform: template
+    id: hp_pool_water_heater
+    name: "Pool Heat Pump"
+    current_temperature: !lambda |-
+      return id(hp_water_in_temp).state;
+    target_temperature: !lambda |-
+      return id(hp_water_temp_setpoint).state;
+    mode: !lambda |-
+      if (!id(hp_power_switch).state || isnan(id(hp_operation_register).state)) {
+        return water_heater::WATER_HEATER_MODE_OFF;
+      }
+
+      switch (((uint16_t) id(hp_operation_register).state) & 0x000F) {
+        case 0:
+          return static_cast<water_heater::WaterHeaterMode>(id(hp_last_water_heater_mode));
+        case 3:
+        case 6:
+          id(hp_last_water_heater_mode) = water_heater::WATER_HEATER_MODE_PERFORMANCE;
+          return water_heater::WATER_HEATER_MODE_PERFORMANCE;
+        case 4:
+        case 7:
+          id(hp_last_water_heater_mode) = water_heater::WATER_HEATER_MODE_ECO;
+          return water_heater::WATER_HEATER_MODE_ECO;
+        case 1:
+        case 2:
+        case 5:
+          id(hp_last_water_heater_mode) = water_heater::WATER_HEATER_MODE_HEAT_PUMP;
+          return water_heater::WATER_HEATER_MODE_HEAT_PUMP;
+        default:
+          return water_heater::WATER_HEATER_MODE_OFF;
+      }
+    is_on: !lambda |-
+      return id(hp_power_switch).state;
+    optimistic: true
+    restore_mode: NO_RESTORE
+    supported_modes:
+      - "OFF"
+      - ECO
+      - PERFORMANCE
+      - HEAT_PUMP
+    visual:
+      min_temperature: 12
+      max_temperature: 35
+      target_temperature_step: 0.5
+    set_action:
+      - lambda: |-
+          auto desired_mode = id(hp_pool_water_heater).get_mode();
+          float desired_setpoint = id(hp_pool_water_heater).get_target_temperature();
+
+          if (desired_mode != water_heater::WATER_HEATER_MODE_OFF) {
+            id(hp_last_water_heater_mode) = desired_mode;
+          }
+
+          if (std::isnan(desired_setpoint)) {
+            desired_setpoint = id(hp_water_temp_setpoint).state;
+          }
+          if (std::isnan(desired_setpoint)) {
+            desired_setpoint = 27.0f;
+          }
+
+          if (desired_setpoint < 12.0f) {
+            desired_setpoint = 12.0f;
+          } else if (desired_setpoint > 35.0f) {
+            desired_setpoint = 35.0f;
+          }
+
+          const uint16_t operation_code = isnan(id(hp_operation_register).state)
+                                            ? 0
+                                            : (((uint16_t) id(hp_operation_register).state) & 0x000F);
+          const bool cooling_family = operation_code == 2 || operation_code == 3 || operation_code == 4;
+          const bool auto_family = operation_code == 1;
+
+          if (fabsf(id(hp_water_temp_setpoint).state - desired_setpoint) >= 0.1f) {
+            auto setpoint_call = id(hp_water_temp_setpoint).make_call();
+            setpoint_call.set_value(desired_setpoint);
+            setpoint_call.perform();
+          }
+
+          if (desired_mode == water_heater::WATER_HEATER_MODE_OFF) {
+            if (id(hp_power_switch).state) {
+              id(hp_power_switch).turn_off();
+            }
+            return;
+          }
+
+          if (!id(hp_power_switch).state) {
+            id(hp_power_switch).turn_on();
+          }
+
+          std::string desired_option;
+          if (desired_mode == water_heater::WATER_HEATER_MODE_HEAT_PUMP) {
+            if (cooling_family) {
+              desired_option = "Cooling + Smart";
+            } else if (auto_family) {
+              desired_option = "Auto";
+            } else {
+              desired_option = "Heating + Smart";
+            }
+          } else if (desired_mode == water_heater::WATER_HEATER_MODE_PERFORMANCE) {
+            desired_option = cooling_family ? "Cooling + Boost" : "Heating + Boost";
+          } else if (desired_mode == water_heater::WATER_HEATER_MODE_ECO) {
+            desired_option = cooling_family ? "Cooling + Eco" : "Heating + Eco";
+          }
+
+          if (!desired_option.empty() && id(hp_operation_mode_select).state != desired_option) {
+            auto mode_call = id(hp_operation_mode_select).make_call();
+            mode_call.set_option(desired_option);
+            mode_call.perform();
+          }

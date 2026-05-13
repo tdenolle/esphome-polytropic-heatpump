@@ -1,0 +1,5 @@
+.DS_Store
+.esphome/
+build/
+secrets.yaml
+secrets.local.yaml
