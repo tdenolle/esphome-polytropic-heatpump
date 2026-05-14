@@ -1,0 +1,44 @@
+# Home Assistant guard rail for the ESPHome pool heat pump water heater.
+#
+# Replace entity IDs below if your Home Assistant names differ.
+
+automation:
+  - alias: Pool Heat Pump - Stop without water flow
+    id: pool_heat_pump_stop_without_water_flow
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.water_flow_switch
+        to: "off"
+      - trigger: state
+        entity_id: water_heater.pool_heat_pump
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.water_flow_switch
+        state: "off"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: water_heater.pool_heat_pump
+            state: "off"
+    actions:
+      - action: water_heater.turn_off
+        target:
+          entity_id: water_heater.pool_heat_pump
+
+  - alias: Pool Heat Pump - Notify blocked start without water flow
+    id: pool_heat_pump_notify_blocked_start_without_water_flow
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: water_heater.pool_heat_pump
+        from: "off"
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.water_flow_switch
+        state: "off"
+    actions:
+      - action: persistent_notification.create
+        data:
+          title: Pool Heat Pump blocked
+          message: Water flow is inactive, so the heat pump has been forced back to Off.

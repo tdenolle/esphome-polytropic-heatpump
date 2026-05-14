@@ -63,9 +63,19 @@ captive_portal:
 logger:
   level: INFO
 
-api:
-  encryption:
-    key: !secret esp32c3_heatpump_pool_api_key
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  discovery: true
+  discover_ip: true
+  discovery_object_id_generator: device_name
+  topic_prefix: heatpump_pool/${name}
+  publish_nan_as_none: true
+  reboot_timeout: 0s
+  log_topic:
+    topic: heatpump_pool/${name}/logs
+    level: INFO
 
 ota:
   - platform : esphome
