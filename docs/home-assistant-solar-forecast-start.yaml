@@ -1,0 +1,50 @@
+# Home Assistant automation for the ESPHome pool heat pump.
+#
+# This snippet assumes that `sensor.solar_forecast_power_next_3h_w` already
+# represents the average forecast solar power for the next 3 hours in watts.
+# If your forecast entity exposes energy in Wh instead, create a template sensor
+# that converts it to an average power value before using this automation.
+#
+# Replace entity IDs below if your Home Assistant names differ.
+
+automation:
+  - alias: Pool Heat Pump - Start from solar forecast
+    id: pool_heat_pump_start_from_solar_forecast
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: sensor.solar_forecast_power_next_3h_w
+      - trigger: time_pattern
+        minutes: "/15"
+    conditions:
+      - condition: state
+        entity_id: water_heater.pool_heat_pump
+        state: "off"
+    actions:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: >-
+                  {{ states('sensor.solar_forecast_power_next_3h_w') | float(0) >= 1500 }}
+            sequence:
+              - action: water_heater.turn_on
+                target:
+                  entity_id: water_heater.pool_heat_pump
+              - action: water_heater.set_operation_mode
+                target:
+                  entity_id: water_heater.pool_heat_pump
+                data:
+                  operation_mode: performance
+          - conditions:
+              - condition: template
+                value_template: >-
+                  {{ states('sensor.solar_forecast_power_next_3h_w') | float(0) >= 800 }}
+            sequence:
+              - action: water_heater.turn_on
+                target:
+                  entity_id: water_heater.pool_heat_pump
+              - action: water_heater.set_operation_mode
+                target:
+                  entity_id: water_heater.pool_heat_pump
+                data:
+                  operation_mode: heat_pump

@@ -99,3 +99,15 @@ It adds automations that:
 - force the water heater back to `off` if water flow disappears while it is running
 - force it back to `off` if someone tries to start it while `Water Flow Switch` is inactive
 - create a persistent notification when a start is blocked for missing water flow
+
+## Home Assistant solar forecast start
+
+If you want Home Assistant to start the pool heat pump only when the solar forecast can cover its expected draw, use `docs/home-assistant-solar-forecast-start.yaml`.
+
+The example automation:
+
+- starts the heat pump in `Smart` / `heat_pump` mode when the forecast is at least 800 W
+- switches to `Boost` / `performance` mode when the forecast is at least 1.5 kW
+- keeps the heat pump off below the threshold
+
+The snippet assumes a forecast sensor that already exposes an average solar power for the next hours. If your integration exposes forecast energy in Wh instead, convert it to watts with a template sensor first.
