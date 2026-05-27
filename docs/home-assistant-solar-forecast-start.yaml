@@ -20,7 +20,7 @@ automation:
         minutes: "/15"
     actions:
       - choose:
-          # >= 1500 W → start in Boost / performance
+          # >= 1500 W → start in Smart / heat_pump
           - conditions:
               - condition: template
                 value_template: >-
@@ -33,8 +33,8 @@ automation:
                 target:
                   entity_id: water_heater.pool_heat_pump
                 data:
-                  operation_mode: performance
-          # >= 800 W → start in Smart / heat_pump
+                  operation_mode: heat_pump
+          # >= 800 W → start in Eco
           - conditions:
               - condition: template
                 value_template: >-
@@ -47,7 +47,7 @@ automation:
                 target:
                   entity_id: water_heater.pool_heat_pump
                 data:
-                  operation_mode: heat_pump
+                  operation_mode: eco
         # < 800 W → standby if currently running
         default:
           - condition: not
