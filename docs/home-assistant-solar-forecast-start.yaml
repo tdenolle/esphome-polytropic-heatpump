@@ -1,31 +1,30 @@
 # Home Assistant automation for the ESPHome pool heat pump.
 #
-# This snippet assumes that `sensor.solar_forecast_power_next_3h_w` already
-# represents the average forecast solar power for the next 3 hours in watts.
-# If your forecast entity exposes energy in Wh instead, create a template sensor
-# that converts it to an average power value before using this automation.
+# This snippet assumes that `sensor.energy_next_hour` already represents
+# the forecast solar power for the next hour in watts.
+# It also assumes you have a Home Assistant select entity exposing PAC operation
+# modes including `Standby`.
+# In this repository setup, the expected entity is:
+# `select.esp32c3_heatpump_pool_operation_mode_select`
 #
 # Replace entity IDs below if your Home Assistant names differ.
 
 automation:
-  - alias: Pool Heat Pump - Start from solar forecast
-    id: pool_heat_pump_start_from_solar_forecast
+  - alias: Pool Heat Pump - Solar forecast manager
+    id: pool_heat_pump_solar_forecast_manager
     mode: single
     triggers:
       - trigger: state
-        entity_id: sensor.solar_forecast_power_next_3h_w
+        entity_id: sensor.energy_next_hour
       - trigger: time_pattern
         minutes: "/15"
-    conditions:
-      - condition: state
-        entity_id: water_heater.pool_heat_pump
-        state: "off"
     actions:
       - choose:
+          # >= 1500 W → start in Boost / performance
           - conditions:
               - condition: template
                 value_template: >-
-                  {{ states('sensor.solar_forecast_power_next_3h_w') | float(0) >= 1500 }}
+                  {{ states('sensor.energy_next_hour') | float(0) >= 1500 }}
             sequence:
               - action: water_heater.turn_on
                 target:
@@ -35,10 +34,11 @@ automation:
                   entity_id: water_heater.pool_heat_pump
                 data:
                   operation_mode: performance
+          # >= 800 W → start in Smart / heat_pump
           - conditions:
               - condition: template
                 value_template: >-
-                  {{ states('sensor.solar_forecast_power_next_3h_w') | float(0) >= 800 }}
+                  {{ states('sensor.energy_next_hour') | float(0) >= 800 }}
             sequence:
               - action: water_heater.turn_on
                 target:
@@ -48,3 +48,13 @@ automation:
                   entity_id: water_heater.pool_heat_pump
                 data:
                   operation_mode: heat_pump
+        # < 800 W → standby if currently running
+        default:
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: water_heater.pool_heat_pump
+                state: "off"
+          - action: water_heater.turn_off
+            target:
+              entity_id: water_heater.pool_heat_pump
