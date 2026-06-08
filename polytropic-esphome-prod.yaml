@@ -472,6 +472,10 @@ text_sensor:
     update_interval: 5s
 
 sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
   - platform: modbus_controller
     modbus_controller_id: heatpump_modbus_controller
     id: hp_operation_register
