@@ -1,5 +1,11 @@
 # ESPHome Polytropic Heat Pump
 
+<div style="border: 3px solid #b00020; background: #ffe6e9; color: #7a0014; padding: 14px; border-radius: 8px; font-weight: 700;">
+WARNING: This ESPHome configuration is only valid for Polytropic heat pumps IVS / IVN / IVP / IVR made in 2019 and later.
+You must request and verify the Modbus register table for your exact heat pump model with Polytropic support before using this project.
+Using an incorrect register table can damage your heat pump.
+</div>
+
 ESPHome configuration for a Polytropic pool heat pump exposed to Home Assistant.
 
 ## Repository contents

@@ -1,3 +1,10 @@
+# WARNING:
+# This ESPHome configuration is only valid for Polytropic heat pumps
+# IVS / IVN / IVP / IVR manufactured in 2019 and later.
+# You must request and verify the Modbus register table for your exact
+# heat pump model with Polytropic support before using this file.
+# Using an incorrect register table can damage your heat pump.
+
 substitutions:
   name: esp32c3-heatpump-pool-403da4
   friendly_name: esp32c3-heatpump-pool-403da4
