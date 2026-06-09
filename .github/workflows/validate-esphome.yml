@@ -28,6 +28,7 @@ jobs:
           cat > .ci-secrets.yaml <<'EOF'
           wifi_ssid: ci-validation-network
           wifi_password: ci-validation-password
+          wifi_ap_password: ci-ap-password
           esp32c3_heatpump_pool_wifi_ap_password: ci-ap-password
           esp32c3_heatpump_pool_api_key: 1234567890123456789012345678901234567890123=
           esp32c3_heatpump_pool_ota_password: ci-ota-password
