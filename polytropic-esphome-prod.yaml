@@ -63,7 +63,7 @@ wifi:
     password: !secret wifi_password
   ap:
     ssid: ${name}
-    password: !secret esp32c3_heatpump_pool_wifi_ap_password
+    password: !secret wifi_ap_password
 
 captive_portal:
 
